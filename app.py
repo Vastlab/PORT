@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_from_directory, flash, redirect, send_file
+from flask import Flask, render_template, request, send_from_directory, flash, redirect, send_file, after_this_request
 from werkzeug.utils import secure_filename
 import os
 import csv
@@ -6,21 +6,31 @@ from OrderedPooledTesting import ORGeneratePools
 
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'csv'}
-MAXPOOLSIZE = 16
-MAXTESTS = 6
+MAX_POOL_SIZE = 16
+MAX_TESTS = 6
 
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+"""
+ To do:
+    Option to enter data manually for each form
+    Make the site pretty, include examples and instructions for uploading the data
+    Maybe add a box that can demonstrate the returned format of samples, what the format of pools is
+    Secure coding principles, html headers avoid xss vulnerabilities
+    Consistent programming check quotes 
+    Assign manual entry to variables in a pool dict
+"""
+
 
 # at localhost:5000/upload pull upload.html
-@app.route("/")
+@app.route('/')
 def upload_file():
     return render_template('upload.html')
 
 
 # save uploaded file when submitted at localhost:5000/upload
-@app.route("/uploader", methods = ['GET', 'POST'])
+@app.route('/uploader', methods=['GET', 'POST'])
 def uploader_file():
     if request.method == 'POST':
         # check if the post request has the file part
@@ -35,20 +45,44 @@ def uploader_file():
             return redirect(request.url)
         if f and allowed_file(f.filename):
             f.filename = secure_filename(f.filename)
-            # f.read to create a string of the uploaded file
-            fstring = f.read()
-            # create list of dictionaries keyed by header row
-            # csv_dicts = [{k: v for k, v in row.items()} for row in
-              # csv.DictReader(fstring.splitlines(), skipinitialspace=True)]
+
+            # Creates a list of dictionaries for use with
             pools = createData(f.filename)
             writeCSV(pools)
-            # modify file before returning
+
             # returns the uploaded file as a download
             try:
+                # Delete the uploaded file after the request as well as pools.csv
+                @after_this_request
+                def remove_file(response):
+                    try:
+                        f.close()
+                        os.remove(f.filename)
+                        os.remove('pools.csv')
+                    except Exception as error:
+                        app.logger.error("Error removing downloaded file ", error)
+                    return response
                 return send_file('pools.csv', as_attachment=True)
             except FileNotFoundError:
                 abort(404)
-            # return send_from_directory(filename='pools.csv', as_attachment=True, directory=UPLOAD_FOLDER) #and os.remove(UPLOAD_FOLDER + '/' + f.filename)
+            # return send_from_directory(filename='pools.csv', as_attachment=True, directory=UPLOAD_FOLDER)
+
+
+# Form for manual entry returns here
+@app.route('/manual-entry', methods=['GET', 'POST'])
+def manual_upload():
+    # Create list of samples as in generateSamples
+    # Needs to obtain number of samples from input data to create each sample
+    # Also needs to make infection rate be collected per sample instead of constant/sample
+
+    samples = [{
+        'SampleID': uuid.uuid4().hex,
+        'ProviderID': ProviderID,
+        'UserKey': uuid.uuid4().hex,
+        'InitialProb': infectionRate,
+        'CurrentProb': infectionRate,
+        'numTest': 1,
+        'Positive': "Unknown"} for index in range(countSamples)]
 
 
 # check if the uploaded file is of the allowed extensions
@@ -57,6 +91,7 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+# Write data to a csv file for download
 def writeCSV(pool):
     with open('pools.csv', 'w', newline='') as f:
         pool_keys = set().union(*(d.keys() for d in pool))
@@ -75,15 +110,15 @@ def createData(filename):
         reader = csv.DictReader(f)
         for data in reader:
             pools.append(data)
-
+    # Cast string to floats for operation
     for dicts in pools:
         dicts['CurrentProb'] = float(dicts['CurrentProb'])
         dicts['InitialProb'] = float(dicts['InitialProb'])
 
     print("Data from csv: ", pools)
-    #print("Data generated: ", ORGeneratePools(pools, 16, 6))
-    return ORGeneratePools(pools, MAXPOOLSIZE, MAXTESTS)
+    # print("Data generated: ", ORGeneratePools(pools, 16, 6))
+    return ORGeneratePools(pools, MAX_POOL_SIZE, MAX_TESTS)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     app.run(debug=True)
