@@ -4,8 +4,8 @@ import os
 import csv
 from OrderedPooledTesting import ORGeneratePools
 
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'csv'}
+UPLOAD_FOLDER = 'C:\\Users\\nicxb\\PycharmProjects\\OrderedPooledTesting\\venv\\uploads'
+ALLOWED_EXTENSIONS = {'csv', 'xls'}
 MAX_POOL_SIZE = 16
 MAX_TESTS = 6
 
@@ -45,11 +45,13 @@ def uploader_file():
             return redirect(request.url)
         if f and allowed_file(f.filename):
             f.filename = secure_filename(f.filename)
-
+            f.save(os.path.join(app.config['UPLOAD_FOLDER'], f.filename))
             # Creates a list of dictionaries for use with
             pools = createData(f.filename)
             writeCSV(pools)
-
+            f.close()
+            os.remove('uploads/' + f.filename)
+            # os.remove('uploads/pools.csv')
             # returns the uploaded file as a download
             try:
                 # Delete the uploaded file after the request as well as pools.csv
@@ -66,6 +68,10 @@ def uploader_file():
             except FileNotFoundError:
                 abort(404)
             # return send_from_directory(filename='pools.csv', as_attachment=True, directory=UPLOAD_FOLDER)
+
+@app.route('/example')
+def example():
+    return render_template('example.html')
 
 
 # Form for manual entry returns here
@@ -105,6 +111,7 @@ def writeCSV(pool):
 
 # Create a dict from the csv passed then send the data to ORGeneratePools and return that data
 def createData(filename):
+    filename = 'uploads/' + filename
     pools = []
     with open(filename, mode='r') as f:
         reader = csv.DictReader(f)
