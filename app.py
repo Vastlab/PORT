@@ -111,7 +111,7 @@ def writeCSV(pool):
 
 # Create a dict from the csv passed then send the data to ORGeneratePools and return that data
 def createData(filename):
-    filename = 'uploads/' + filename
+    filename = UPLOAD_FOLDER + filename
     pools = []
     with open(filename, mode='r') as f:
         reader = csv.DictReader(f)
