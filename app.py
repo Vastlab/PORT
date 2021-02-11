@@ -4,7 +4,7 @@ import os
 import csv
 from OrderedPooledTesting import ORGeneratePools
 
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = ''
 ALLOWED_EXTENSIONS = {'csv', 'xls'}
 MAX_POOL_SIZE = 16
 MAX_TESTS = 6
@@ -50,7 +50,7 @@ def uploader_file():
             pools = createData(f.filename)
             writeCSV(pools)
             f.close()
-            os.remove('uploads/' + f.filename)
+            os.remove(UPLOAD_FOLDER + f.filename)
             # os.remove('uploads/pools.csv')
             # returns the uploaded file as a download
             try:
