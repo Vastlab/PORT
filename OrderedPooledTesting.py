@@ -43,7 +43,7 @@ import numpy as np
 from typing import Dict, List, Any, Union
 from operator import itemgetter
 
-TBdebug=0
+TBdebug=2
 #TBdebug=0  #No debug info
 
 
