@@ -50,6 +50,27 @@ def writeCSV(filename, sample):
             writer.writerow(data)
 
 
+# Display pools in a readable manner to compare with paper
+def printPools(pools):
+    # Print each pool and the length
+    # Display 'x' for each item in the pool to see if it is ordered
+    # print(pools)
+    # Each pool is a dictionary with row and column pools
+    # Print item in each row pool
+    print("Samples in row pools: ")
+    for pool in pools[0]['rowPools']:
+        for sample in pool:
+            print("x ", end='')
+        print("")
+
+    print("Samples in col pools: ")
+    for pool in pools[0]['colPools']:
+        for sample in pool:
+            print("x ", end='')
+        print("")
+
+
+
 def main():
     # Create testing samples and generate pools
     sample = generateSamples(ASYMPTOMATIC, 1, PA)
@@ -67,8 +88,10 @@ def main():
     # requests_keys = set().union(*(d.keys() for d in requests))
 
     # Data generated from samples written to sample.csv
-    writeCSV('sample.csv', sample)
-    writeCSV('pools.csv', genPools)
+    # writeCSV('sample.csv', sample)
+    # writeCSV('pools.csv', genPools)
+
+    printPools(genPools)
 
 
 if __name__ == "__main__":
