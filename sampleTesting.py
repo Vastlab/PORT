@@ -12,8 +12,8 @@ ASYMPTOMATIC = 100
 SYMPTOMATIC = 20
 PA = 0.01
 PS = 0.2
-MAXPOOLSIZE = 16
-MAXTESTS = 6
+MAXPOOLSIZE = 32
+MAXTESTS = 16
 
 # Returns sample id, probability, status, poolID, RowID, ColumnID
 def returnFunction(sample, pool):
@@ -60,8 +60,8 @@ def main():
     # Used in writing to CSV this makes the first row equal to the dict keys
     # sample_keys = set().union(*(d.keys() for d in sample))
 
-    print("Sample Data:", sample)
-    print('Generated pools" ', genPools)
+#    print("Sample Data:", sample)
+#    print('Generated pools" ', genPools)
 
     # requests = returnFunction(sample, genPools)
     # requests_keys = set().union(*(d.keys() for d in requests))

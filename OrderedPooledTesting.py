@@ -43,8 +43,8 @@ import numpy as np
 from typing import Dict, List, Any, Union
 from operator import itemgetter
 
-TBdebug=1
-#TBdebug=False
+TBdebug=0
+#TBdebug=0  #No debug info
 
 
 # TODO shift things to libraries or __init__
@@ -80,7 +80,8 @@ def generateSamples(countSamples, ProviderID, infectionRate):
     # This would locally be used to pull results without linking
     # the person to the sample.
     samples = [{
-        'SampleID': uuid.uuid4().hex,
+#        'SampleID': "i"+str(index)+"-"+str(infectionRate)+"-"+uuid.uuid4().hex,
+                'SampleID': "i"+str(index)+"-"+str(infectionRate),
         'ProviderID': ProviderID,
         'UserKey': uuid.uuid4().hex,
         'InitialProb': infectionRate,
@@ -92,7 +93,7 @@ def generateSamples(countSamples, ProviderID, infectionRate):
     # Check each sample if there is an override
     # need to make more pythonesque later
 
-    for index in range(0, countSamples):
+    for index in range(0, countSamples-1):
         if checkIR(samples[index]['InitialProb'],
                    samples[index]['SampleID'],
                    samples[index]['ProviderID'],
@@ -102,6 +103,8 @@ def generateSamples(countSamples, ProviderID, infectionRate):
                                                   samples[index]['ProviderID'],
                                                   samples[index]['UserPass'])
             samples[index]['CurrentProb'] = samples[index]['InitialProb']
+    if(TBdebug>0):
+        print("Generated ",len(samples)," samples");
     return samples
 
 
@@ -183,23 +186,39 @@ def ExpectedORCost(prob,nrows,ncols,cnt,nsamples):
 #        return 1    
     
     expectrows = 0
-    expectcols = 0    
+    if((TBdebug > 2) and (nrows == 6) and (ncols == 20)  ):
+        print ("Prob for ", nrows,ncols,"shape", np.shape(prob)," prod= ",prob);
     for row in range( 0, nrows,1):
         colprod = 1
         for col in range( 0, ncols,1):        
             colprod *= (1-prob[row][col])
+            if((TBdebug > 4) and (nrows == 5) and (ncols == 20)  ):
+                print (" include prob ", prob[row][col]," for ", row,col," prod= ",colprod);            
+        if((TBdebug > 5) and (nrows == 6) and (ncols == 19)  ):
+            print ("OR for", nrows,ncols," 1-cprod= ",1-colprod);
         expectrows +=  (1-colprod)
+    if((TBdebug > 2) and (nrows == 6) and (ncols == 19)  ):
+        print ("erows", nrows,ncols," 1-cprod= ",expectrows);
 
+    expectcols = 0    
     for col in range( 0, ncols,1):        
         rowprod = 1
         for row in range( 0, nrows,1):
             rowprod *= (1-prob[row][col])
+            if((TBdebug > 4) and (nrows == 6) and (ncols == 19)  ):
+                print (" include prob ", prob[row][col]," for ", row,col," rprod= ",rowprod);            
+        if((TBdebug > 4) and (nrows == 6) and (ncols == 19)  ):
+            print ("OR for", nrows,ncols," 1-cprod= ",1-rowprod);
         expectcols +=  (1-rowprod)
+    if((TBdebug > 2) and (nrows == 6) and (ncols == 19)  ):
+        print ("ecols", nrows,ncols," 1-cprod= ",expectcols);
+        
 #we add +1 since we are using 0 based rows/columns so have one more expeced
 #    tcost = (nrows+1 + ncols+1 + mceil(expectrows+1)* mceil(expectcols+1))
 #    print ("OR Ecost ",cnt,nrows+1,ncols+1,mceil(expectrows+1), mceil(expectcols+1),tcost,tcost/cnt,tcost/cnt*nsamples)
-    tcost = (nrows  + ncols  + mceil((expectrows)* (expectcols)))    
-    if(TBdebug > 3):    print ("OR Ecost ",cnt,nrows,ncols,mceil(expectrows), mceil(expectcols),tcost,tcost/cnt,tcost/cnt*nsamples)
+#    ncols += 1
+    tcost = (nrows  + ncols  + mceil((expectrows))* mceil(expectcols+1))
+    if(TBdebug > 2):    print ("OR for", nrows,ncols," Ecost= ",tcost, "cnt=", cnt, "int rows,cols", mceil(expectrows), mceil(expectcols+1),tcost,tcost/cnt,tcost/cnt*nsamples)
     return tcost
     
     
@@ -213,6 +232,9 @@ def ORGeneratePools(samples, maxPoolSize, maxTests):
            :param maxTests: ??
            :return: pools
            """
+    if(TBdebug > 0):        print("Doring Ordered Rectangle with ", len(samples)," samples")
+#    pdb.set_trace()    
+#    return;
     sortedsamples =     sorted(samples, key=itemgetter('CurrentProb'),reverse=True)
 #    sortedsamples =     sorted(samples, key=itemgetter('SampleID'),reverse=True)      #simulate random order
 #    maxsum = 1.0
@@ -239,48 +261,77 @@ def ORGeneratePools(samples, maxPoolSize, maxTests):
                      col=0
                      row=0
                      cnt=0;
-                     for sample in sortedsamples[startpos:endpos]:
-                         if (col < nc):
-                             rowsum += sample['CurrentProb']
-                             if (maxsum >0 and rowsum >= maxsum):
-                                 if(row > nr):
-                                     break                        
-                                 row += 1
-                                 rowsum = sample['CurrentProb']
+                     for row in range( 0, nr,1):
+#                         cnt -= 1                         
+                         for col in range( 0, nc,1):
+                             if(startpos+cnt < endpos):
+                                 sample = sortedsamples[startpos+cnt]
+                             else:
+                                 row=nr
+                                 col=nc
+                                 break; 
                              prob[row][col] = sample['CurrentProb']
                              cnt += 1
-     #                        print("Fill ", row, col, prob[row][col],cnt)
-                             col += 1
-                         else:
-                             #if we filled this rectangle as full as it goes, so break from loop over using samples
-                             row += 1
-                             if(row >= nr):
-                                 break
-                             rowsum = sample['CurrentProb']
-                             col = 0
-                             prob[row][col] = sample['CurrentProb']
-                             cnt += 1
-     #                        print("rFill ", row, col, prob[row][col],cnt)
 
+# older code from when we were testing if rowsum mattered.. it does not
+#                      for sample in sortedsamples[startpos:endpos]:
+#                          if (col < nc):
+#                              rowsum += sample['CurrentProb']
+#                              if (maxsum >0 and rowsum >= maxsum):
+#                                  if(row > nr):
+#                                      if((TBdebug > 2) ):                                 
+#                                          print("row too full ", row, col, prob[row][col],cnt,rowsum,maxsum)                                     
+#                                      break                        
+#                                  row += 1
+#                                  rowsum = sample['CurrentProb']
+#                              prob[row][col] = sample['CurrentProb']
+#                              cnt += 1
+# #                             if(TBdebug > 3):
+#                              if((TBdebug > 2) and (nr == 7) and (nc == 20)  ):                                 
+#                                  print("Fill ", row, col, prob[row][col],cnt,rowsum,maxsum)
+# #                             if((TBdebug > 2) and (nr == 7) and (nc == 20) and (row == 5) and (col==14) ):
+# #                                 pdb.set_trace();
 
+#                              col += 1
+#                          else:
+#                              #if we filled this rectangle as full as it goes, so break from loop over using samples
+#                              row += 1
+#                              if(row >= nr):
+#                                  row -= 1;
+#                                  break
+#                              rowsum = sample['CurrentProb']
+#                              col = 0
+#                              prob[row][col] = sample['CurrentProb']
+#                              if((TBdebug > 2) and (nr == 7) and (nc == 20)  ):                                 
+#                                  print("rFill ", row, col, prob[row][col],cnt,rowsum,maxsum)
+#                              cnt += 1
+
+                     if((TBdebug > 2) and (nr == 6) and (nc == 20)  ):                                 
+                         print("Filled  ", nr, nc, "cnt", cnt,  "shape", np.shape(prob), "prob =", prob)
+                                 
                      #when here we have a fillled prob matrix so can compute expected cost of this design.
-                     tcost = ExpectedORCost(prob,row,nc,cnt,nsamples)
+                     tcost = ExpectedORCost(prob,nr,nc,cnt,nsamples)
                      ecost = tcost/cnt*nsamples
+                     if(TBdebug > 2):                             
+                                 print("rT/Ecost ", tcost," ", ecost,"for  row, col",nr,nc,cnt,nsamples)                     
                      if(ecost < minval):
+                         if(TBdebug > 2):                             
+                                 print("New min  ", ecost," ", math.ceil(tcost),"for  row, col",nr,nc,cnt,nsamples)                                              
                          minval = ecost
                          minlocal = math.ceil(tcost)
-                         minr = row+1
+                         minr = nr
                          minc = nc
                          mincnt = cnt;
+
         scost = ExpectedSinglePoolCost(sortedsamples[startpos:endpos],maxPoolSize)
         if(TBdebug > 1):
             print("single pool returns", scost )
-            print ("OR Min " ,minlocal, "at ", minr,minc+1,"Expected=", minval,"Cnt = ", mincnt, "per-item", minlocal / (mincnt))
+            print ("OR Min " ,minlocal, "at ", minr,minc,"Expected=", minval,"Cnt = ", mincnt, "per-item", minlocal / (mincnt))
         if( (scost[0] <  minlocal / (mincnt))
             or ( minlocal / mincnt > 1 )
             or minr < 0 
         ):
-            if(TBdebug > 1):            print("single wins with ", scost, minlocal / (mincnt+1) )
+            if(TBdebug > 0):            print("single wins with ", scost, minlocal / (mincnt+1) )
             #if single pool cost is > 1, then run as indivisual
             if(scost[0] > .97) :
                 if(TBdebug > 1): print("IndTesting", scost, minlocal / (mincnt+1) )
@@ -316,6 +367,7 @@ def ORGeneratePools(samples, maxPoolSize, maxTests):
                               })
             startpos += mincnt;                
         else:
+            if(TBdebug > 0): print("OR wins. Doing design with ", minr,minc )            
             #Have minimum expected cost design, now use it to compute sample pool row and coluns
             prob = np.zeros((minr,minc))
             rowsum=0
@@ -944,110 +996,117 @@ def ActualORCost(pools,truthdict):
 # import requests
 
 
-###########################################################
-#  Welcome to main ()
-# TODO: data-frames (pandas) are more efficient but I hate using with functions
-# TODO: convert to flask application and microservices (json returns)
-# TODO: integrate with database - MariaDB (sqlalchemy)
-Largetesting=False
-Largetesting=True
-if Largetesting:
-    countSamples = 2405
-    infectionRate = 0.05
-    ProviderID = 1
-    samples = generateSamples(countSamples, ProviderID, infectionRate)
-    countSamples = 1400
-    infectionRate = 0.004
-    ProviderID = 2
-    samples = samples + generateSamples(countSamples, ProviderID, infectionRate)
-    countSamples = 100
-    infectionRate = 0.12
-    samples = samples + generateSamples(countSamples, ProviderID, infectionRate)
-    countSamples = 1000
-    infectionRate = 0.08
-    ProviderID = 4
-    samples = samples + generateSamples(countSamples, ProviderID, infectionRate)
-else:
-    #TBtest data
-    countSamples = 110
-    infectionRate = 0.01
-    ProviderID = 1
-    samples = generateSamples(countSamples, ProviderID, infectionRate)
-    countSamples = 10
-    infectionRate = 0.4
-    ProviderID = 2
-    samples = samples + generateSamples(countSamples, ProviderID, infectionRate)
+
+def OR_main():
+ ###########################################################
+ #  Welcome to main ()
+ # TODO: data-frames (pandas) are more efficient but I hate using with functions
+ # TODO: convert to flask application and microservices (json returns)
+ # TODO: integrate with database - MariaDB (sqlalchemy)
+ Largetesting=False
+ Largetesting=True
+ if Largetesting:
+     countSamples = 2405
+     infectionRate = 0.05
+     ProviderID = 1
+     samples = generateSamples(countSamples, ProviderID, infectionRate)
+     countSamples = 1400
+     infectionRate = 0.004
+     ProviderID = 2
+     samples = samples + generateSamples(countSamples, ProviderID, infectionRate)
+     countSamples = 100
+     infectionRate = 0.12
+     samples = samples + generateSamples(countSamples, ProviderID, infectionRate)
+     countSamples = 1000
+     infectionRate = 0.08
+     ProviderID = 4
+     samples = samples + generateSamples(countSamples, ProviderID, infectionRate)
+ else:
+     #TBtest data
+     countSamples = 110
+     infectionRate = 0.01
+     ProviderID = 1
+     samples = generateSamples(countSamples, ProviderID, infectionRate)
+     countSamples = 10
+     infectionRate = 0.4
+     ProviderID = 2
+     samples = samples + generateSamples(countSamples, ProviderID, infectionRate)
 
 
-# TODO: account for probability breaks/backtrack in samples of combo approach
-# TODO: allow variable infection rates, provider data, and include test error (inconclusive results)
-# TODO: consider number of unique RNA tests (2) required for positive and RNA validation test (1)
-# TODO: add unit test / integration test, etc.
-# TODO: create requirements and build files
-# TODO: MD documentation
-# TODO: too much to think about
-# TODO: Toggle for IND confirmation of positive results.
-# This is a cheat to make faster, should be eliminated once DB in place
-sample2index = {}
-counter = 0
-for i in samples:
-    sample2index[i['SampleID']] = counter
-    counter += 1
+ # TODO: account for probability breaks/backtrack in samples of combo approach
+ # TODO: allow variable infection rates, provider data, and include test error (inconclusive results)
+ # TODO: consider number of unique RNA tests (2) required for positive and RNA validation test (1)
+ # TODO: add unit test / integration test, etc.
+ # TODO: create requirements and build files
+ # TODO: MD documentation
+ # TODO: too much to think about
+ # TODO: Toggle for IND confirmation of positive results.
+ # This is a cheat to make faster, should be eliminated once DB in place
+ sample2index = {}
+ counter = 0
+ for i in samples:
+     sample2index[i['SampleID']] = counter
+     counter += 1
 
-# TODO: permit override of infection rate that is we guess wrong in samples
-truth = generateTruth(samples)
-truth2index = {}
-counter = 0
-# This is a cheat to make faster, and only used for testing
-for i in truth:
-    truth2index[i['SampleID']] = counter
-    counter += 1
+ # TODO: permit override of infection rate that is we guess wrong in samples
+ truth = generateTruth(samples)
+ truth2index = {}
+ counter = 0
+ # This is a cheat to make faster, and only used for testing
+ for i in truth:
+     truth2index[i['SampleID']] = counter
+     counter += 1
 
-#TB: make a dict so we can lookup truth by string
-truthdict  = {truth[i].get('SampleID'): truth[i].get('Truth') for i in range(0, len(truth), 1)}    
+ #TB: make a dict so we can lookup truth by string
+ truthdict  = {truth[i].get('SampleID'): truth[i].get('Truth') for i in range(0, len(truth), 1)}    
 
-#print(truth)
-# This is the maximum times a sample can be tested. It reflects approximate number of tests possible post-RNA extract
-maxTests = 6
-# An additional 6 RNA extracts can be performed
-# This is the maximum size of pool or those tests that can be combined and still have detection correct
-# Higher numbers theoretically possible with extra cycles during RNA extract
-maxPoolSize = 16
-current_round = 1
-# Well count on plates
-plateWellCount = 96
-# 96 is 12 x 8
-# 348 is also an option
-# 24 x 16
-# maxPlate limits return to this number of plates 0 is infinite
-# TODO add a storage plate option this would allow a plate to store individual samples in addition to pools
-maxPlate = 0
-if(TBdebug>0):
-    pools = ORGeneratePools(samples, maxPoolSize, maxTests)
-else:
-    pools = generatePools(samples, maxPoolSize, maxTests)
+ #print(truth)
+ # This is the maximum times a sample can be tested. It reflects approximate number of tests possible post-RNA extract
+ maxTests = 6
+ # An additional 6 RNA extracts can be performed
+ # This is the maximum size of pool or those tests that can be combined and still have detection correct
+ # Higher numbers theoretically possible with extra cycles during RNA extract
+ maxPoolSize = 32
+ current_round = 1
+ # Well count on plates
+ plateWellCount = 96
+ # 96 is 12 x 8
+ # 348 is also an option
+ # 24 x 16
+ # maxPlate limits return to this number of plates 0 is infinite
+ # TODO add a storage plate option this would allow a plate to store individual samples in addition to pools
+ maxPlate = 0
+ print("GENERATING samples for testinng ")
+ if(TBdebug>8):    
+     pools = ORGeneratePools(samples, maxPoolSize, maxTests)
+ else: 
+     pools = generatePools(samples, maxPoolSize, maxTests)
 
 
-displayPoolMetrics(pools, current_round,truthdict)
 
-# I force all tests for a pool onto a single plate
-plates = generatePlates(pools, plateWellCount, maxPlate)
-plate=plates.pop()
-result = runPlate()
-while notCompletedTest(samples):
-    pools = generatePools(samples, maxPoolSize, maxTests)
-    displayPoolMetrics(pools, current_round)
+ displayPoolMetrics(pools, current_round,truthdict)
 
-    plates = generatePlates(pools, plateWellCount,maxPlate)
-    displayPlatesMetrics(plates, current_round)
-    current_plate = 1
-    for plate in plates:
-        displaySampleMetrics(current_round, current_plate, samples)
-        result = runPlate(plate, truth, samples, pools, current_round, current_plate)
-        displayResults(result, current_plate, current_round)
-        samples = updateSamples(samples, plate, pools, result)
-        current_plate += 1
+ # I force all tests for a pool onto a single plate
+ plates = generatePlates(pools, plateWellCount, maxPlate)
+ plate=plates.pop()
+ result = runPlate()
+ while notCompletedTest(samples):
+     pools = generatePools(samples, maxPoolSize, maxTests)
+     displayPoolMetrics(pools, current_round)
 
-    displaySampleMetrics(current_round, current_plate, samples)
-    current_round += 1
+     plates = generatePlates(pools, plateWellCount,maxPlate)
+     displayPlatesMetrics(plates, current_round)
+     current_plate = 1
+     for plate in plates:
+         displaySampleMetrics(current_round, current_plate, samples)
+         result = runPlate(plate, truth, samples, pools, current_round, current_plate)
+         displayResults(result, current_plate, current_round)
+         samples = updateSamples(samples, plate, pools, result)
+         current_plate += 1
+
+     displaySampleMetrics(current_round, current_plate, samples)
+     current_round += 1
+
+
+
 
