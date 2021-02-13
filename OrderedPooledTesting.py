@@ -43,7 +43,7 @@ import numpy as np
 from typing import Dict, List, Any, Union
 from operator import itemgetter
 
-TBdebug=2
+TBdebug=3
 #TBdebug=0  #No debug info
 
 
@@ -186,18 +186,18 @@ def ExpectedORCost(prob,nrows,ncols,cnt,nsamples):
 #        return 1    
     
     expectrows = 0
-    if((TBdebug > 2) and (nrows == 6) and (ncols == 20)  ):
+    if((TBdebug > 2) and (nrows == 11) and (ncols == 11)  ):
         print ("Prob for ", nrows,ncols,"shape", np.shape(prob)," prod= ",prob);
     for row in range( 0, nrows,1):
         colprod = 1
         for col in range( 0, ncols,1):        
             colprod *= (1-prob[row][col])
-            if((TBdebug > 4) and (nrows == 5) and (ncols == 20)  ):
+            if((TBdebug > 4) and (nrows == 11) and (ncols == 11)  ):
                 print (" include prob ", prob[row][col]," for ", row,col," prod= ",colprod);            
-        if((TBdebug > 5) and (nrows == 6) and (ncols == 19)  ):
+        if((TBdebug > 2) and (nrows == 11) and (ncols == 11)  ):
             print ("OR for", nrows,ncols," 1-cprod= ",1-colprod);
         expectrows +=  (1-colprod)
-    if((TBdebug > 2) and (nrows == 6) and (ncols == 19)  ):
+    if((TBdebug > 2) and (nrows == 11) and (ncols == 11)  ):
         print ("erows", nrows,ncols," 1-cprod= ",expectrows);
 
     expectcols = 0    
@@ -205,20 +205,20 @@ def ExpectedORCost(prob,nrows,ncols,cnt,nsamples):
         rowprod = 1
         for row in range( 0, nrows,1):
             rowprod *= (1-prob[row][col])
-            if((TBdebug > 4) and (nrows == 6) and (ncols == 19)  ):
+            if((TBdebug > 4) and (nrows == 11) and (ncols == 11)  ):
                 print (" include prob ", prob[row][col]," for ", row,col," rprod= ",rowprod);            
-        if((TBdebug > 4) and (nrows == 6) and (ncols == 19)  ):
+        if((TBdebug > 2) and (nrows == 11) and (ncols == 11)  ):
             print ("OR for", nrows,ncols," 1-cprod= ",1-rowprod);
         expectcols +=  (1-rowprod)
-    if((TBdebug > 2) and (nrows == 6) and (ncols == 19)  ):
+    if((TBdebug > 2) and (nrows == 11) and (ncols == 11)  ):
         print ("ecols", nrows,ncols," 1-cprod= ",expectcols);
         
 #we add +1 since we are using 0 based rows/columns so have one more expeced
 #    tcost = (nrows+1 + ncols+1 + mceil(expectrows+1)* mceil(expectcols+1))
 #    print ("OR Ecost ",cnt,nrows+1,ncols+1,mceil(expectrows+1), mceil(expectcols+1),tcost,tcost/cnt,tcost/cnt*nsamples)
 #    ncols += 1
-    tcost = (nrows  + ncols  + mceil((expectrows))* mceil(expectcols+1))
-    if(TBdebug > 2):    print ("OR for", nrows,ncols," Ecost= ",tcost, "cnt=", cnt, "int rows,cols", mceil(expectrows), mceil(expectcols+1),tcost,tcost/cnt,tcost/cnt*nsamples)
+    tcost = (nrows  + ncols  + mceil((expectrows))* mceil(expectcols))
+    if(TBdebug > 2):    print ("OR for", nrows,ncols," Ecost= ",tcost, "cnt=", cnt, "int rows,cols", mceil(expectrows), mceil(expectcols), (expectrows), (expectcols),tcost,tcost/cnt,tcost/cnt*nsamples)
     return tcost
     
     

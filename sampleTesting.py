@@ -88,7 +88,7 @@ def main():
     # requests_keys = set().union(*(d.keys() for d in requests))
 
     # Data generated from samples written to sample.csv
-    # writeCSV('sample.csv', sample)
+    #writeCSV('sample.csv', sample)
     # writeCSV('pools.csv', genPools)
 
     printPools(genPools)
