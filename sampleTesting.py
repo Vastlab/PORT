@@ -8,12 +8,22 @@ import csv
 
 
 FILENAME = 'testing.txt'
+MAXPOOLSIZE = 32
+MAXTESTS = 16
+
+#Example 1
 ASYMPTOMATIC = 100
 SYMPTOMATIC = 20
 PA = 0.01
 PS = 0.2
-MAXPOOLSIZE = 32
-MAXTESTS = 16
+
+
+# Example 2
+ASYMPTOMATIC = 60
+SYMPTOMATIC = 60
+PA = 0.0166
+PS = 0.0666
+
 
 # Returns sample id, probability, status, poolID, RowID, ColumnID
 def returnFunction(sample, pool):

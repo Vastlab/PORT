@@ -311,7 +311,13 @@ def ORGeneratePools(samples, maxPoolSize, maxTests):
                                  
                      #when here we have a fillled prob matrix so can compute expected cost of this design.
                      tcost = ExpectedORCost(prob,nr,nc,cnt,nsamples)
-                     ecost = tcost/cnt*nsamples
+                     #if we have a lot left (at least as many as we use in this count then use this count as the estimate of expected cost
+                     if (cnt < nsamples and (nsamples - cnt) > cnt):
+                         ecost = tcost/cnt*nsamples
+                     else:
+                     #else assume remaining are single test
+                         ecost = tcost + nsamples-cnt
+                         
                      if(TBdebug > 2):                             
                                  print("rT/Ecost ", tcost," ", ecost,"for  row, col",nr,nc,cnt,nsamples)                     
                      if(ecost < minval):
@@ -380,7 +386,6 @@ def ORGeneratePools(samples, maxPoolSize, maxTests):
             rows = [[] for _ in range(minr)]
             cols = [[] for _ in range(minc)]
 
-
             for sample in sortedsamples[startpos:endpos]:
                 if (col < minc):
                     rowsum += sample['CurrentProb']
@@ -389,6 +394,7 @@ def ORGeneratePools(samples, maxPoolSize, maxTests):
                         rowsum = 0;
                         row += 1
                         if(row >= minr):
+                            print("Break with row col", row, col)
                             break                    
                     rows[row].append(sample['SampleID'])
                     cols[col].append(sample['SampleID'])
@@ -396,16 +402,19 @@ def ORGeneratePools(samples, maxPoolSize, maxTests):
                     col += 1
                     cnt += 1
                 else:   
+                    pdb.set_trace()
                     row += 1
                     #if we filled this rectangle as full as it goes, so break from loop over using samples
                     if(row >= minr):
+                        print("Break2 with row col", row, col)
                         break
                     col = 0
                     rows[row].append(sample['SampleID'])
                     cols[col].append(sample['SampleID'])
                     poolit.append(sample['SampleID'])
                     rowsum = sample['CurrentProb']
-                    cnt += 1                
+                    cnt += 1
+                    col += 1                    
             #filled in rows, columns so update the pools
     #        pdb.set_trace()
             pools.append({'type': "ORCOMBO",
