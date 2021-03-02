@@ -6,7 +6,7 @@ from OrderedPooledTesting import ORGeneratePools
 
 UPLOAD_FOLDER = ''
 ALLOWED_EXTENSIONS = {'csv', 'xls'}
-MAX_POOL_SIZE = 16
+MAX_POOL_SIZE = 32
 MAX_TESTS = 6
 
 
@@ -14,12 +14,11 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 """
  To do:
-    Make the site pretty, include examples and instructions for uploading the data
-    Secure coding principles, html headers avoid xss vulnerabilities
     Consistent programming check quotes 
     Assign manual entry to variables in a pool dict
         if the given form does not have certain aspects filled out such as provider ID, current probability,
         positive, and test number filled out then those should be automatically given some value such as 0
+
 """
 
 
@@ -74,39 +73,116 @@ def example():
     return render_template('example.html')
 
 
-# Form for manual entry returns here
-@app.route('/manual-entry', methods=['GET', 'POST'])
-def manual_upload():
-    # Create list of samples as in generateSamples
-    # Needs to obtain number of samples from input data to create each sample
-    # Also needs to make infection rate be collected per sample instead of constant/sample
+# Form for individual testing returns here
+@app.route('/intersection', methods=['GET', 'POST'])
+def computeIntersect():
+    # User enters positive rows and columns and submits the pools file
+    # This function will return a file with the intersecting samples to the rows/columns that are positive for
+    # individual testing.
+    if request.method == 'POST':
+        # Access the list of data
+        rows = request.form["positiveR"]
+        rows = rows.upper()
+        cols = request.form["positiveC"]
+        cols = cols.upper()
+        # Use the same safeguards as initial submit to protect from malicious file uploads
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        f = request.files['file']
+        # if user does not select file, browser also
+        # submit an empty part without filename
+        if f.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if f and allowed_file(f.filename):
+            # Save the file first
+            f.filename = secure_filename(f.filename)
+            f.save(os.path.join(app.config['UPLOAD_FOLDER'], f.filename))
 
-    samples = [{
-        'SampleID': uuid.uuid4().hex,
-        'ProviderID': ProviderID,
-        'UserKey': uuid.uuid4().hex,
-        'InitialProb': infectionRate,
-        'CurrentProb': infectionRate,
-        'numTest': 1,
-        'Positive': "Unknown"} for index in range(countSamples)]
+            # Read from file using openpyxl and create a list from rowsCols
+            # Need to remove trailing whitespace
+            listR = rows.strip().split(" ")
+            listC = cols.strip().split(" ")
+            samples2Test = []
+            # Create lists from each row/col pair
+            with open(f.filename, 'r') as file:
+                reader = csv.reader(file)
+                # create list of row content from listR
+                data = [row for count, row in enumerate(reader) if str(count + 1) in listR]
+            # Create content for columns
+            for row in data:
+                '''
+                We know that individual test must be done at each intersection thus we only need the sample
+                that is located at the column of the rows we already collect the data of.    
+                '''
+                for col in listC:
+                    samples2Test.append(row[int(col) - 1])
+            # Write samples2test to a csv or text file as the individual tests that must be completed
+            with open("individualTests.txt", 'w') as file:
+                file.write("The following samples should be given individual tests: \n")
+                for sample in samples2Test:
+                    file.write("%s\n" % sample)
+            try:
+                # Delete the uploaded file after the request as well as pools.csv
+                @after_this_request
+                def remove_file(response):
+                    try:
+                        os.remove(f.filename)
+                        os.remove('individualTests.txt')
+                    except Exception as error:
+                        app.logger.error("Error removing downloaded file ", error)
+                    return response
+                return send_file("individualTests.txt", as_attachment=True)
+            except FileNotFoundError:
+                abort(404)
 
 
 # check if the uploaded file is of the allowed extensions
 def allowed_file(filename):
+    """
+    Determine if an uploaded file is of the allowed extensions
+    :param filename: Uploaded filename
+    :return: returns the file extension of upload
+    """
     return '.' in filename and \
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 # Write data to a csv file for download
 def writeCSV(pool):
+    """
+    :param pool: pool object
+    :return: No return, 1 for success???
+    """
     with open('pools.csv', 'w', newline='') as f:
-        # pool_keys = set().union(*(d.keys() for d in pool))
         writer = csv.writer(f)
-        # writer.writeheader()
-        # for data in sample:
-        # genPools = ORGeneratePools(data, 16, 6)
-        for data in pool[0]['colPools']:
-            writer.writerow(data)
+        # Write all pools to one file with a label of the pool type
+        for pool in pool:
+            # Label the pool type
+            poolType = []
+            poolType.append(pool['type'])
+            writer.writerow(poolType)
+            # Write data if the pool is of ORCOMBO
+            if (pool["type"] == "ORCOMBO"):
+                # Check if col > rows then transpose
+                if (len(pool['rowPools'][0]) >= len(pool['colPools'][0])):
+                    for data in pool['colPools']:
+                        writer.writerow(data)
+                else:
+                    for data in pool['rowPools']:
+                        writer.writerow(data)
+            elif (pool["type"] == "SINGLE"):
+                # Write single testing
+                singlePool = []
+                for data in pool['rowPools']:
+                    singlePool.append(data)
+                    writer.writerow(singlePool)
+                    singlePool = []
+            elif (pool["type"] == "IND"):
+                # Write individual tests to the file
+                writer.writerow(pool['Pool'])
 
 
 # Create a dict from the csv passed then send the data to ORGeneratePools and return that data
@@ -122,8 +198,6 @@ def createData(filename):
         dicts['CurrentProb'] = float(dicts['CurrentProb'])
         dicts['InitialProb'] = float(dicts['InitialProb'])
 
-    print("Data from csv: ", pools)
-    # print("Data generated: ", ORGeneratePools(pools, 16, 6))
     return ORGeneratePools(pools, MAX_POOL_SIZE, MAX_TESTS)
 
 
