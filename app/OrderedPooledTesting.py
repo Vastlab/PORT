@@ -402,7 +402,7 @@ def ORGeneratePools(samples, maxPoolSize, maxTests):
                     col += 1
                     cnt += 1
                 else:   
-                    pdb.set_trace()
+                    # pdb.set_trace()
                     row += 1
                     #if we filled this rectangle as full as it goes, so break from loop over using samples
                     if(row >= minr):
