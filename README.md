@@ -16,7 +16,7 @@ The flask container should now be running at http://localhost:5000. The docker a
 
 # Usage instructions
 
-Some example files exist on the "examples" page of the now running docker container. You can download these files to test that the application is functioning properly, download from either the webpage or upload a copy from the repository at: ```app/static/downloads/```.
+Some example files exist on the "examples" page of the now running docker container. You can download these files to test that the application is functioning properly, download from either the webpage or upload a copy from the repository at: ```app/static/downloads/```. Example files also exist at the root of this repository under `examples` this includes examples from the paper and a file with more samples that will give multiple pools in the result.
 
 ![paperexamples](https://user-images.githubusercontent.com/75324494/117877932-6bcbf580-b262-11eb-8767-30731768ed54.PNG)
 
@@ -42,4 +42,3 @@ When you submit the file you must select the positive rows and columns in a spac
 ![tool2ex](https://user-images.githubusercontent.com/75324494/117879932-c0707000-b264-11eb-936b-3300f71c8e67.PNG)
 
 ![indTests](https://user-images.githubusercontent.com/75324494/117880097-f150a500-b264-11eb-90f3-c26f0dd48d9d.PNG)
-
