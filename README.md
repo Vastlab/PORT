@@ -9,7 +9,7 @@ From the root of the cloned directory:
 
 ```
 docker build -t $name .
-docker run -dp $host_port:80 $name
+docker run -dp 5000:80 $name
 ```
 
-The flask container should now be running on the host's port that you chose to map with $host_port.
+The flask container should now be running at http://localhost:5000. The docker application MUST be run on port 5000.
