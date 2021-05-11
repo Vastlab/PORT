@@ -34,24 +34,19 @@
             <p><input type = "submit"/></p>
         </form>
 
-        <h3>Sample table of pool ordering</h3>
-        <p>This will be the location of a sample pool which is dynamically generated from the data returned when an
-            item is submitted to the website.</p>
-        <!--Alternative form allowing the user to upload data manually
+
         <h2>Or</h2>
-        <h2>Enter Data Manually</h2>
-
-        Data from provider should be: Initial probability, sample identifiers (comma separated list of values),
-        provider ID, for other values can just use generateSamples with positivity rate and have that gen values.
-
-
-        <form action= "http://localhost:5000/manual-entry" method = "POST">
-            <p>Probability of Infection <input type = "text" name = "pInfection" size="50"/></p>
-            <p>Sample Identifiers <input type = "text" name = "sampleIdentifiers" size="50" /></p>
-            <p>Provider ID <input type = "text" name = "providerID" size="50"/></p>
+        <h2>Enter Positive Rows and Columns</h2>
+        <p>Enter rows and columns that tested positive in a space separated list. Rows: "2 4 5" Columns: "1 2 5"</p>
+        <p>Submit only the pool that you are entering positive rows and columns for. The excel or csv file should
+            have no headers or additional information.</p>
+        <form action= "http://localhost:5000/intersection" method = "POST" enctype="multipart/form-data">
+            <p>Positive Rows <input type = "text" name = "positiveR" size="50"/></p>
+            <p>Positive Columns <input type = "text" name = "positiveC" size = "50"/></p>
+            <p><input type = "file" name = "file" /></p>
             <p><input type = "submit" value = "submit" /></p>
         </form>
-        -->
+
         <div class="examples">
             <!-- Visual demonstration of examples from the paper
             showing the tables that the function will create, could use
