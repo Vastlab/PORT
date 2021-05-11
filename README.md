@@ -3,13 +3,13 @@ Based on paper PORT: Pooled Ordered Rectangular Testing for Improved Public Heal
 
 # Usage instructions
 
-'''git clone https://github.com/Vastlab/PORT.git'''
+```git clone https://github.com/Vastlab/PORT.git```
 
 From the root of the cloned directory:
 
-'''
+```
 docker build -t $name .
 docker run -dp $host_port:80 $name
-'''
+```
 
 The flask container should now be running on the host's port that you chose to map with $host_port.
