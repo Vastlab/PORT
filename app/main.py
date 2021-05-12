@@ -58,7 +58,7 @@ def uploader_file():
                 return send_file('pools.csv', as_attachment=True)
             except FileNotFoundError:
                 abort(404)
-            # return send_from_directory(filename='pools.csv', as_attachment=True, directory=UPLOAD_FOLDER)
+
 
 @app.route('/example')
 def example():
