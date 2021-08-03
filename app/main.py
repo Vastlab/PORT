@@ -157,7 +157,7 @@ def writeCSV(pool):
             poolType.append(pool['type'])
             writer.writerow(poolType)
             # Write data if the pool is of ORCOMBO
-            if (pool["type"] == "ORCOMBO"):
+            if (pool["type"] == "PORT"):
                 # Check if col > rows then transpose
                 if (len(pool['rowPools'][0]) >= len(pool['colPools'][0])):
                     for data in pool['colPools']:
