@@ -12,7 +12,7 @@ docker build -t $name .
 docker run -dp 5000:80 $name
 ```
 
-The flask container should now be running at http://localhost:5000. The docker application MUST be run on port 5000.
+The flask container should now be running at http://localhost:5000. The docker application runs on port 5000 by default, to run on a different port you must change the port references in the file PORT/app/templates/upload.html. 
 
 # Usage instructions
 
@@ -31,7 +31,7 @@ When the file is uploaded it should look something like this:
 
 ![sampleExamples](https://user-images.githubusercontent.com/75324494/117878735-4b506b00-b263-11eb-86ff-6ba08d5d427a.PNG)
 
-Prior to the start of each pool the file will designate what type of testing is to be completed: Single, Ordered Rectangular (ORCOMBO), or Individual.
+Prior to the start of each pool the file will designate what type of testing is to be completed: Single, Ordered Rectangular (PORT), or Individual. An example pool file is located at PORT/examples/largeSamplePools.csv
 
 After testing has been completed on the samples in an ordered rectangular pool our tool also creates a list of the necessary individual tests to be completed. To use this tool upload an excel file containing only the sample names from the tested pool. There should be no other information included in the file, it should look something like this:
 
