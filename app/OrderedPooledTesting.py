@@ -417,7 +417,7 @@ def ORGeneratePools(samples, maxPoolSize, maxTests):
                     col += 1                    
             #filled in rows, columns so update the pools
     #        pdb.set_trace()
-            pools.append({'type': "ORCOMBO",
+            pools.append({'type': "PORT",
                           'poolID': uuid.uuid4().hex,
                           'rowPools': rows,
                           'colPools': cols,
@@ -877,7 +877,7 @@ def separatePools(pools):
     for pool in pools:
         if pool['type'] == 'COMBO':
             combo.append(pool)
-        elif pool['type'] == 'ORCOMBO':
+        elif pool['type'] == 'PORT':
             combo.append(pool)
         elif pool['type'] == 'BIN':
             binary.append(pool)
@@ -907,7 +907,7 @@ def displaySampleMetrics():
 def displayPoolMetrics(pools, current_round,truthdict):
     print("Round ", current_round)
     countCOMBO = 0
-    countORCOMBO = 0
+    countPORT = 0
     countSINGLE = 0        
     countBIN = 0
     countIND = 0
@@ -918,9 +918,9 @@ def displayPoolMetrics(pools, current_round,truthdict):
     for pool in pools:
         if pool['type'] == "COMBO":
             countCOMBO += 1
-        elif pool['type'] == "ORCOMBO":
+        elif pool['type'] == "PORT":
             ExpectedCost += pool['ExpectedCost']           
-            countORCOMBO += 1
+            countPORT += 1
         elif pool['type'] == "SINGLE":
             ExpectedCost += pool['ExpectedCost']           
             countSINGLE += 1
@@ -937,13 +937,13 @@ def displayPoolMetrics(pools, current_round,truthdict):
         
     print("===========================")
     print("\t Combination Matrices Pools: ", countCOMBO)
-    print("\t Ordered Rectangular Pools: ", countORCOMBO)
+    print("\t Ordered Rectangular Pools: ", countPORT)
     print("\t Single Pools: ", countSINGLE)        
     print("\t Binary Search Pools: ", countBIN)
     print("\t Individual: ", countIND)
     if countUNK > 0:
         print("\t Unknown: ", countUNK)
-    if pool['type'] == "ORCOMBO" or pool['type'] == "SINGLE":
+    if pool['type'] == "PORT" or pool['type'] == "SINGLE":
         actual=ActualORCost(pools,truthdict)
         print("\t Total OR Pooled Testing:  expected cost ", ExpectedCost, "and actual cost", actual, "for ", countSample, " samples for actual per sample saving of ",countSample/actual )        
     else:
@@ -964,7 +964,7 @@ def ActualORCost(pools,truthdict):
     for pool in pools:
         rowcnt=0
         colcnt=0
-        if(pool['type'] == "ORCOMBO"):
+        if(pool['type'] == "PORT"):
             for row in pool["rowPools"]:
                 ispos=False;
                 for sampleid in row:
